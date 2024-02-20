@@ -5,6 +5,8 @@ import network
 import umail
 import onewire
 import ds18x20
+import urequests
+import json
 
 """ Set up network connection """
 
@@ -66,6 +68,11 @@ def write_to_oled(sensor_one_status, sensor_two_status, sensor_one_temp, sensor_
 
 """ Set up DS18B20 """
 
+sensor_one_status = "OFF"
+sensor_two_status = "OFF"
+sensor_one_temp = 0
+sensor_two_temp = 0
+
 ds_pin = Pin(16)
 ow = onewire.OneWire(ds_pin)
 ds = ds18x20.DS18X20(ow)
@@ -75,19 +82,40 @@ print('Found DS18B20 sensor with address: ', roms)
 """ MAIN """
 connect_to_wifi(ssid, password)
 
+data = {
+    "temp1": 1.05,  # t1 is the temperature 1 variable
+    "temp2": 1.65 # t2 is the temperature 2 variable
+}
+headers = {'Content-Type': 'application/json'}
+json_data = json.dumps(data)
+
+
+url = 'http://172.234.206.64:8000/data'
+response = urequests.post(url, data=json_data, headers=headers)
+print(response.status_code)
+print(response.text)
+
 while True:
     ds.convert_temp()
     sleep_ms(10)
     # Button 1 is pressed, temp sensor 1 turned on. 
     if button1.value() == 0:
-        sensor_one_status = "ON"
-        sensor_one_temp = round(ds.read_temp(roms[0]), 1)
+        try:
+            sensor_one_temp = round(ds.read_temp(roms[0]), 1)
+            sensor_one_status = "ON"
+        except Exception as e1:
+            print("Error reading sensor 1: ", e1)
+            sensor_one_status = "D/C"
     else: 
         sensor_one_status = "OFF"
-        
+            
     if button2.value() == 0:
-        sensor_two_status = "ON"
-        sensor_two_temp = round(ds.read_temp(roms[1]), 1)
+        try:
+            sensor_two_temp = round(ds.read_temp(roms[1]), 1)
+            sensor_two_status = "ON"
+        except Exception as e2:
+            print("Error reading sensor 2: ", e2)
+            sensor_two_status = "D/C"
     else: 
         sensor_two_status = "OFF"
 

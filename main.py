@@ -80,24 +80,11 @@ roms = ds.scan()
 print('Found DS18B20 sensor with address: ', roms)
 
 """ MAIN """
-connect_to_wifi(ssid, password)
 
-data = {
-    "temp1": 1.05,  # t1 is the temperature 1 variable
-    "temp2": 1.65 # t2 is the temperature 2 variable
-}
-headers = {'Content-Type': 'application/json'}
-json_data = json.dumps(data)
-
-
-url = 'http://172.234.206.64:8000/data'
-response = urequests.post(url, data=json_data, headers=headers)
-print(response.status_code)
-print(response.text)
 
 while True:
     ds.convert_temp()
-    sleep_ms(10)
+    sleep_ms(1000)
     # Button 1 is pressed, temp sensor 1 turned on. 
     if button1.value() == 0:
         try:
@@ -108,6 +95,7 @@ while True:
             sensor_one_status = "D/C"
     else: 
         sensor_one_status = "OFF"
+        sensor_one_temp = 0.0
             
     if button2.value() == 0:
         try:
@@ -118,5 +106,21 @@ while True:
             sensor_two_status = "D/C"
     else: 
         sensor_two_status = "OFF"
+        sensor_two_temp = 0.0
+
+    connect_to_wifi(ssid, password)
+
+    data = {
+        "temp1": sensor_one_temp,  # t1 is the temperature 1 variable
+        "temp2": sensor_two_temp # t2 is the temperature 2 variable
+    }
+    headers = {'Content-Type': 'application/json'}
+    json_data = json.dumps(data)
+
+
+    url = 'http://172.234.206.64:8000/data'
+    response = urequests.post(url, data=json_data, headers=headers)
+    print(response.status_code)
+    print(response.text)
 
     write_to_oled(sensor_one_status, sensor_two_status, sensor_one_temp, sensor_two_temp)
